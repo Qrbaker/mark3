@@ -1,6 +1,6 @@
-# mark2
+# mark3
 
-     mark2  server01  server02                                        user
+     mark3  server01  server02                                        user
     ┌────────────── server01 ──────────────┐┌─────────── stats ───────────┐
     │2015-06-04 13:55:34 | Server          ││cpu: 0.20%                   │
     │permissions file permissions.yml is   ││mem: 2.06%                   │
@@ -19,12 +19,12 @@
     └──────────────────────────────────────┘└─────────────────────────────┘
      >
 
-mark2 is a minecraft server wrapper, written in python and twisted. It aims to be *the* definitive wrapper, providing a
+mark3 will be a minecraft server wrapper, written in python and twisted. It aims to be *the* definitive wrapper, providing a
 rich feature-set and a powerful plugin interface. It has no requirement on craftbukkit.
 
 see [INSTALL.md](INSTALL.md) for requirements and installation instructions
 
-see [USAGE.md](USAGE.md) for details on how to use mark2
+see [USAGE.md](USAGE.md) for details on how to use mark3
 
 ## features
 
