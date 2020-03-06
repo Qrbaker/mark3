@@ -11,3 +11,5 @@ build
 dist
 mark2.egg-info
 _*/
+.vscode/launch.json
+.vscode/settings.json
