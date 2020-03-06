@@ -63,7 +63,7 @@ class Builtin(Plugin):
         # actually reload
         for p in requires_reload:
             self.parent.plugins.reload(p)
-        reloaded = filter(None, requires_reload)
+        reloaded = [_f for _f in requires_reload if _f]
         self.console("%d plugins reloaded: %s" % (len(reloaded), ", ".join(reloaded)))
 
     def handle_cmd_reload(self, event):

@@ -54,7 +54,7 @@ def getframe(depth=0):
     i = 0
     while i <= depth:
         frame = _getframe(i)
-        if frame.f_code == mark2install.run.im_func.func_code:
+        if frame.f_code == mark2install.run.__func__.__code__:
             depth += 1
         i += 1
     return frame

@@ -1,5 +1,5 @@
 from twisted.python import log
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import json
 
 from twisted.web.client import HTTPClientFactory, getPage
@@ -20,7 +20,7 @@ class BouncerAPI:
             raise AttributeError
         
         def inner(*args, **kwargs):
-            args = [urllib.quote(a.encode('utf8'), "") for a in args]
+            args = [urllib.parse.quote(a.encode('utf8'), "") for a in args]
             callback = kwargs.get('callback', None)
             addr = '/'.join([self.api_base, method, self.api_key] + args)
             deferred = getPage(addr)

@@ -38,7 +38,7 @@ class Manager(object):
             self.really_start()
         except Exception:
             for l in traceback.format_exc().split("\n"):
-                print l
+                print(l)
                 self.console(l, kind='error')
             self.shutdown()
 
@@ -118,7 +118,7 @@ class Manager(object):
         o  = "An event handler threw an exception: \n"
         o += "  Callback: %s\n" % callback
         o += "  Event: \n"
-        o += "".join(("    %s: %s\n" % (k, v) for k, v in event.serialize().iteritems()))
+        o += "".join(("    %s: %s\n" % (k, v) for k, v in event.serialize().items()))
 
         # log the message and a very verbose exception log to the log file
         log.msg(o)
@@ -168,7 +168,7 @@ class Manager(object):
             reactor.callInThread(lambda: os.kill(os.getpid(), signal.SIGINT))
 
     def console(self, line, **k):
-        for l in unicode(line).split(u"\n"):
+        for l in str(line).split("\n"):
             k['line'] = l
             self.events.dispatch(events.Console(**k))
     

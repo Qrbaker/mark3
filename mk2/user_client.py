@@ -7,12 +7,12 @@ from twisted.internet import reactor
 from twisted.internet.protocol import ClientFactory, ProcessProtocol
 from twisted.internet.task import LoopingCall
 from twisted.protocols.basic import LineReceiver
-import properties
+from . import properties
 import psutil
 import re
 import sys
 import urwid
-from shared import console_repr, open_resource
+from .shared import console_repr, open_resource
 
 
 class TabEvent:
@@ -25,12 +25,12 @@ class TabEvent:
         else:
             self.left, right = line[:pos], line[pos:]
 
-        self.players = filter(lambda p: re.match(right, p, re.I), players)
+        self.players = [p for p in players if re.match(right, p, re.I)]
         if len(self.players) == 0:
             self.fail = line
         self.index = 0
 
-    def next(self):
+    def __next__(self):
         if self.fail:
             return self.fail
         i = self.index % len(self.players)
@@ -97,7 +97,7 @@ class Prompt(urwid.Edit):
             else:
                 if self.tab is None:
                     self.tab = TabEvent(text, self.get_players())
-                self.set_prompt(self.tab.next())
+                self.set_prompt(next(self.tab))
         else:
             return urwid.Edit.keypress(self, size, key)
 
@@ -117,7 +117,7 @@ class PMenuWrap(urwid.WidgetPlaceholder):
         self._pmenu_lists   = [ (n, urwid.SimpleListWalker([])) for n    in self.names        ]
         self._pmenu_widgets = [ (n, urwid.ListBox(l))           for n, l in self._pmenu_lists ]
 
-        self.fill(1, zip(actions, actions))
+        self.fill(1, list(zip(actions, actions)))
         self.fill(2, reasons)
 
         self.first()
@@ -128,7 +128,7 @@ class PMenuWrap(urwid.WidgetPlaceholder):
         name, contents = self._pmenu_lists[index]
         del contents[0:len(contents)]
         for name, result in items:
-            e = urwid.AttrMap(PMenuButton(name, self.next, result), 'menu_item', 'menu_item_focus')
+            e = urwid.AttrMap(PMenuButton(name, self.__next__, result), 'menu_item', 'menu_item_focus')
             contents.append(e)
 
     def first(self):
@@ -185,7 +185,7 @@ class PMenuWrap(urwid.WidgetPlaceholder):
             a = add.pop(0)
             while i < len(content) - 1 and content[i].original_widget.label.lower() < a.lower():
                 i += 1
-            content.insert(i, urwid.AttrMap(PMenuButton(a, self.next, a), 'menu_item', 'menu_item_focus'))
+            content.insert(i, urwid.AttrMap(PMenuButton(a, self.__next__, a), 'menu_item', 'menu_item_focus'))
             i += 1
 
 
@@ -294,7 +294,7 @@ class UI:
 
         contents = self.g_servers.contents
         del contents[0:len(contents)]
-        contents.append((urwid.AttrMap(urwid.Text(u' mark2 '), 'mark2'), self.g_servers.options('pack')))
+        contents.append((urwid.AttrMap(urwid.Text(' mark2 '), 'mark2'), self.g_servers.options('pack')))
         contents.extend(new)
         contents.append((urwid.Divider(), self.g_users.options()))
 
@@ -354,7 +354,7 @@ class UI:
         self.redraw()
 
     def set_filter(self, filter_):
-        if isinstance(filter_, basestring):
+        if isinstance(filter_, str):
             return self.set_filter(self.filters[filter_])
         self.filter = filter_.apply
         self.set_output()
@@ -576,7 +576,7 @@ class UserClientFactory(ClientFactory):
                 m = p.match(msg['data'])
                 return m and m.end() == len(msg['data'])
             return _filter
-        patterns = dict((k, makefilter(p)) for k, p in cfg.iteritems())
+        patterns = dict((k, makefilter(p)) for k, p in cfg.items())
 
         patterns['all'] = lambda a: True
 
@@ -688,9 +688,9 @@ def colorize(text):
                         '8':30, '9':34, 'a':32, 'b':36, 'c':31, 'd':35, 'e':33, 'f':37}
 #                        '8':38, '9':42, 'a':40, 'b':44, 'c':39, 'd':43, 'e':41, 'f':45}
 
-    if text.find(u'\u00A7') != -1:
+    if text.find('\u00A7') != -1:
         for code in mappings_mc_ansi:
-            text = text.replace(u'\u00A7' + code, '\033[' + str(mappings_mc_ansi[code]) + u'm')
+            text = text.replace('\u00A7' + code, '\033[' + str(mappings_mc_ansi[code]) + 'm')
 
     """
     Convert ansi escape codes to urwid display attributes
@@ -701,7 +701,7 @@ def colorize(text):
 
     text_attributed = []
 
-    parts = unicode(text).split(u'\x1b')
+    parts = str(text).split('\x1b')
 
     regex = re.compile(r"^\[([;\d]*)m(.*)$", re.UNICODE | re.DOTALL)
 
@@ -712,7 +712,7 @@ def colorize(text):
             if r.group(2) != '':
                 foreground = 'white'
                 background = 'default'
-                for code in filter(None, r.group(1).split(';')):
+                for code in [_f for _f in r.group(1).split(';') if _f]:
                     if (int(code) in mappings_fg):
                         foreground = mappings_fg[int(code)]
 

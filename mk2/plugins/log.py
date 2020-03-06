@@ -12,7 +12,7 @@ class Log(Plugin):
     path      = Plugin.Property(default="logs/server-{timestamp}-{status}.log.gz")
     vanilla   = Plugin.Property(default=False)
     
-    log = u""
+    log = ""
     reason = "unknown"
     time_re = re.compile(r'(?:\d{2}:\d{2}:\d{2}) (.*)')
 
@@ -29,12 +29,12 @@ class Log(Plugin):
     def vanilla_logger(self, event):
         m = self.time_re.match(event.line)
         if m:
-            self.log += u"{0} {1}\n".format(event.time, m.group(1))
+            self.log += "{0} {1}\n".format(event.time, m.group(1))
         else:
-            self.log += u"{0}\n".format(event.line)
+            self.log += "{0}\n".format(event.line)
     
     def logger(self, event):
-        self.log += u"{0}\n".format(event.value())
+        self.log += "{0}\n".format(event.value())
     
     def pre_shutdown(self, event):
         self.reason = event.reason

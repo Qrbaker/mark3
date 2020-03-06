@@ -214,7 +214,7 @@ class IRCBot(irc.IRCClient):
         
     def compute_prefix_names(self):
         KNOWN_NAMES = {"o": "op", "h": "halfop", "v": "voice"}
-        prefixdata = self.supported.getFeature("PREFIX", {"o": ("@", 0), "v": ("+", 1)}).items()
+        prefixdata = list(self.supported.getFeature("PREFIX", {"o": ("@", 0), "v": ("+", 1)}).items())
         op_priority = ([priority for mode, (prefix, priority) in prefixdata if mode == "o"] + [None])[0]
         self.prefixes, self.statuses, self.priority = {}, {}, {}
 
@@ -237,7 +237,7 @@ class IRCBot(irc.IRCClient):
 
     def parse_prefixes(self, user, nick, prefixes=''):
         status = []
-        prefixdata = self.supported.getFeature("PREFIX", {"o": ("@", 0), "v": ("+", 1)}).items()
+        prefixdata = list(self.supported.getFeature("PREFIX", {"o": ("@", 0), "v": ("+", 1)}).items())
         for mode, (prefix, priority) in prefixdata:
             if prefix in prefixes + nick:
                 nick = nick.replace(prefix, '')
@@ -362,7 +362,7 @@ class IRCBot(irc.IRCClient):
 
     def sasl_start(self, cap_list):
         if 'sasl' not in cap_list:
-            print cap_list
+            print(cap_list)
             return
         self.request_cap('sasl')
         self.sasl_result = defer.Deferred()
@@ -409,11 +409,11 @@ class IRCBot(irc.IRCClient):
             self.console("irc: failed to log in.")
 
     def irc_904(self, prefix, params):
-        print params
+        print(params)
         self.sasl_failed()
 
     def irc_905(self, prefix, params):
-        print params
+        print(params)
         self.sasl_failed()
 
     def irc_906(self, prefix, params):
@@ -482,38 +482,38 @@ class IRC(Plugin):
 
     #general
     cancel_highlight     = Plugin.Property(default=False, type_=False)
-    cancel_highlight_str = Plugin.Property(default=u"_")
+    cancel_highlight_str = Plugin.Property(default="_")
 
     #game -> irc settings
     game_columns = Plugin.Property(default=True)
 
     game_status_enabled = Plugin.Property(default=True)
-    game_status_format  = Plugin.Property(default=u"!, | server {what}.")
+    game_status_format  = Plugin.Property(default="!, | server {what}.")
 
     game_chat_enabled = Plugin.Property(default=True)
-    game_chat_format  = Plugin.Property(default=u"{username}, | {message}")
+    game_chat_format  = Plugin.Property(default="{username}, | {message}")
     game_chat_private = Plugin.Property(default=None)
 
     game_join_enabled = Plugin.Property(default=True)
-    game_join_format  = Plugin.Property(default=u"*, | --> {username}")
+    game_join_format  = Plugin.Property(default="*, | --> {username}")
 
     game_quit_enabled = Plugin.Property(default=True)
-    game_quit_format  = Plugin.Property(default=u"*, | <-- {username}")
+    game_quit_format  = Plugin.Property(default="*, | <-- {username}")
 
     game_death_enabled = Plugin.Property(default=True)
-    game_death_format  = Plugin.Property(default=u"*, | {text}")
+    game_death_format  = Plugin.Property(default="*, | {text}")
 
     game_server_message_enabled = Plugin.Property(default=True)
-    game_server_message_format  = Plugin.Property(default=u"#server, | {message}")
+    game_server_message_format  = Plugin.Property(default="#server, | {message}")
 
     #bukkit only
     game_me_enabled = Plugin.Property(default=True)
-    game_me_format  = Plugin.Property(default=u"*, | {username} {message}")
+    game_me_format  = Plugin.Property(default="*, | {username} {message}")
 
     #irc -> game settings
     irc_chat_enabled    = Plugin.Property(default=True)
-    irc_chat_command    = Plugin.Property(default=u"say [IRC] <{nickname}> {message}")
-    irc_action_command  = Plugin.Property(default=u"say [IRC] * {nickname} {message}")
+    irc_chat_command    = Plugin.Property(default="say [IRC] <{nickname}> {message}")
+    irc_action_command  = Plugin.Property(default="say [IRC] * {nickname} {message}")
     irc_chat_status     = Plugin.Property(default=None)
 
     irc_command_prefix  = Plugin.Property(default="!")
@@ -522,7 +522,7 @@ class IRC(Plugin):
     irc_command_mark2   = Plugin.Property(default=False)
 
     irc_players_enabled = Plugin.Property(default=True)
-    irc_players_format  = Plugin.Property(default=u"*, | players currently in game: {players}")
+    irc_players_format  = Plugin.Property(default="*, | players currently in game: {players}")
 
     def setup(self):
         self.players = []
@@ -611,7 +611,7 @@ class IRC(Plugin):
 
     def format(self, format, **data):
         if self.game_columns:
-            f = unicode(format).split(',', 1)
+            f = str(format).split(',', 1)
             f[0] = f[0].format(**data)
             if len(f) == 2:
                 f[0] = f[0].rjust(self.column_width)

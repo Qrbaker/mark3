@@ -11,7 +11,7 @@ class Check(object):
     def __init__(self, parent, **kw):
         self.dispatch = parent.dispatch
         self.console = parent.console
-        for k, v in kw.items():
+        for k, v in list(kw.items()):
             setattr(self, k, v)
 
     def check(self):
@@ -127,7 +127,7 @@ class Monitor(Plugin):
         self.server_started(None)
 
     def step(self, *a):
-        for c in self.checks.values():
+        for c in list(self.checks.values()):
             c.step()
 
         if self.crash_enabled:
@@ -137,7 +137,7 @@ class Monitor(Plugin):
             self.send(self.crash_check_command)  # Blank command to trigger 'Unknown command'
     
     def reset_counts(self):
-        for c in self.checks.values():
+        for c in list(self.checks.values()):
             c.reset()
 
     ### handlers

@@ -120,9 +120,7 @@ class PluginMetaclass(type):
         return type.__init__(cls, name, bases, dict)
 
 
-class Plugin:
-    __metaclass__ = PluginMetaclass
-
+class Plugin(metaclass=PluginMetaclass):
     Property = _PluginProperty
 
     enabled = Property()
@@ -146,15 +144,15 @@ class Plugin:
 
         self._args = {}
 
-        missing = set(self._requires) - set(kwargs.iterkeys())
-        excess = set(kwargs.iterkeys()) - set(self._contains)
+        missing = set(self._requires) - set(kwargs.keys())
+        excess = set(kwargs.keys()) - set(self._contains)
         if missing:
             raise Exception("Plugin {0} missing properties: {1}".
                             format(self.__class__.__name__, ", ".join(missing)))
         elif excess:
             raise Exception("Plugin {0} got extraneous properties: {1}".
                             format(self.__class__.__name__, ", ".join(excess)))
-        for k, v in kwargs.iteritems():
+        for k, v in kwargs.items():
             try:
                 setattr(self, k, v)
             except ValueError:
@@ -206,7 +204,7 @@ class Plugin:
         return dict((k, getattr(self, k)) for k in self.restore)
 
     def load_state(self, state):
-        [setattr(self, k, v) for k, v in state.iteritems()]
+        [setattr(self, k, v) for k, v in state.items()]
     
     def delayed_task(self, callback, delay, name=None):
         hook = self._task(callback, name)
@@ -239,7 +237,7 @@ class Plugin:
         self.dispatch(ServerInput(line=l))
 
     def send_format(self, l, **kw):
-        kw = dict((k, FormatWrapper(v)) for k, v in kw.iteritems())
+        kw = dict((k, FormatWrapper(v)) for k, v in kw.items())
         self.send(l.format(**kw))
     
     def action_chain_cancellable(self, spec, callbackWarn, callbackAction, callbackCancel=None):
@@ -372,7 +370,7 @@ class PluginManager(dict):
         return self.load(name)
 
     def unload_all(self):
-        for name in self.keys():
+        for name in list(self.keys()):
             self.unload(name)
 
     def reload_all(self):

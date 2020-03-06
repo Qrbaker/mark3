@@ -2,12 +2,13 @@ import os
 import re
 import shlex
 import zipfile
+from functools import reduce
 
 
 def load(cls, *files):
     o = None
     for f in files:
-        if isinstance(f, basestring):
+        if isinstance(f, str):
             if os.path.isfile(f):
                 with open(f) as f:
                     o = cls(f, o)
@@ -57,7 +58,7 @@ class Properties(dict):
         #This handles backslash escapes in keys/values
         def parse(input):
             token = list(input)
-            out = u""
+            out = ""
             uni = False
             while len(token) > 0:
                 c = token.pop(0)
@@ -70,7 +71,7 @@ class Properties(dict):
                             b = ""
                             for i in range(4):
                                 b += token.pop(0)
-                            out += unichr(int(b, 16))
+                            out += chr(int(b, 16))
                             uni = True
                         else:
                             out += c
@@ -130,7 +131,7 @@ class Properties(dict):
         f.close()
 
     def get_by_prefix(self, prefix):
-        for k, v in self.iteritems():
+        for k, v in self.items():
             if k.startswith(prefix):
                 yield k[len(prefix):], v
 
@@ -139,7 +140,7 @@ class Mark2Properties(Properties):
     def get_plugins(self):
         plugins = {}
         enabled = []
-        for k, v in self.iteritems():
+        for k, v in self.items():
             m = re.match('^plugin\.(.+)\.(.+)$', k)
             if m:
                 plugin, k2 = m.groups()
@@ -162,7 +163,7 @@ class Mark2Properties(Properties):
         options = []
         if self.get('java.cli_prepend', '') != '':
             options.extend(shlex.split(self['java.cli_prepend']))
-        for k, v in self.iteritems():
+        for k, v in self.items():
             m = re.match('^java\.cli\.([^\.]+)\.(.+)$', k)
             if m:
                 a, b = m.groups()
@@ -180,14 +181,14 @@ class Mark2Properties(Properties):
                     else:
                         options.append('-XX:%s=%s' % (b, v))
                 else:
-                    print "Unknown JVM option type: %s" % a
+                    print("Unknown JVM option type: %s" % a)
         if self.get('java.cli_extra', '') != '':
             options.extend(shlex.split(self['java.cli_extra']))
         return options
     
     def get_format_options(self):
         options = {}
-        for k, v in self.iteritems():
+        for k, v in self.items():
             m = re.match('^mark2\.format\.(.*)$', k)
             if m:
                 options[m.group(1)] = v
