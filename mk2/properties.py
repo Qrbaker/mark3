@@ -46,16 +46,25 @@ class Properties(dict):
             'string': lambda a: a
         }
 
-        c_seperator  = (':', '=')
+        c_seperator = (':', '=')
         c_whitespace = (' ', '\t', '\f')
-        c_escapes    = ('t','n','r','f')
-        c_comment    = ('#','!')
+        c_escapes = ('t', 'n', 'r', 'f')
+        c_comment = ('#', '!')
 
-        r_unescaped  = '(?<!\\\\)(?:\\\\\\\\)*'
+        r_unescaped = '(?<!\\\\)(?:\\\\\\\\)*'
         r_whitespace = '[' + re.escape(''.join(c_whitespace)) + ']*'
-        r_seperator  = r_unescaped + r_whitespace + r_unescaped + '[' + re.escape(''.join(c_seperator + c_whitespace)) + ']'
+        r_seperator = r_unescaped + r_whitespace + r_unescaped + '[' + re.escape(
+            ''.join(c_seperator + c_whitespace)) + ']'
 
-        #This handles backslash escapes in keys/values
+        # Helper function to perform str to str decoding of escape sequences
+        # See https://stackoverflow.com/a/58829514
+        def string_escape(s, encoding='utf-8'):
+            return (s.encode('latin1')         # To bytes, required by 'unicode-escape'
+                    .decode('unicode-escape')  # Perform the actual octal-escaping decode
+                    .encode('latin1')          # 1:1 mapping back to bytes
+                    .decode(encoding))         # Decode original encoding
+        
+        # This handles backslash escapes in keys/values
         def parse(input):
             token = list(input)
             out = ""
@@ -66,7 +75,7 @@ class Properties(dict):
                     try:
                         c = token.pop(0)
                         if c in c_escapes:
-                            out += ('\\'+c).decode('string-escape')
+                            out += string_escape('\\' + c)
                         elif c == 'u':
                             b = ""
                             for i in range(4):
@@ -80,33 +89,36 @@ class Properties(dict):
                 else:
                     out += c
 
-            if not uni:
-                out = out.encode('ascii')
             return out
 
-        d = f.read()
+        if f.mode == 'rb':
+            d = f.read().decode('utf8')
+        elif f.mode == 'r':
+            d = f.read()
+        else:
+            raise TypeError('Unable to parse provided file as string (received file in mode %s)' % f.mode)
 
-        #Deal with Windows / Mac OS linebreaks
-        d = d.replace('\r\n','\n')
+        # Deal with Windows / Mac OS linebreaks
+        d = d.replace('\r\n', '\n')
         d = d.replace('\r', '\n')
-        #Strip leading whitespace
+        # Strip leading whitespace
         d = re.sub('(?m)\n\s*', '\n', d)
-        #Split logical lines
+        # Split logical lines
         d = re.split('(?m)' + r_unescaped + '\n', d)
 
         for line in d:
-            #Strip comments and empty lines
+            # Strip comments and empty lines
             if line == '' or line[0] in c_comment:
                 continue
 
-            #Strip escaped newlines
+            # Strip escaped newlines
             line = re.sub('(?m)' + r_unescaped + '(\\\\\n)', '', line)
             assert not '\n' in line
 
-            #Split into k,v
+            # Split into k,v
             x = re.split(r_seperator, line, maxsplit=1)
 
-            #No seperator, parse as empty value.
+            # No separator, parse as empty value.
             if len(x) == 1:
                 k, v = x[0], ""
             else:
@@ -144,10 +156,10 @@ class Mark2Properties(Properties):
             m = re.match('^plugin\.(.+)\.(.+)$', k)
             if m:
                 plugin, k2 = m.groups()
-                
+
                 if plugin not in plugins:
                     plugins[plugin] = {}
-                
+
                 if k2 == 'enabled':
                     if v:
                         enabled.append(plugin)
@@ -185,7 +197,7 @@ class Mark2Properties(Properties):
         if self.get('java.cli_extra', '') != '':
             options.extend(shlex.split(self['java.cli_extra']))
         return options
-    
+
     def get_format_options(self):
         options = {}
         for k, v in self.items():
@@ -197,11 +209,12 @@ class Mark2Properties(Properties):
     def get_umask(self, ext):
         return int(str(self['mark2.umask.' + ext]), 8)
 
+
 class ClientProperties(Properties):
     def get_palette(self):
         palette = []
         for k, v in self.get_by_prefix('theme.%s.' % self['theme']):
-            palette.append([k,] + [t.strip() for t in v.split(',')])
+            palette.append([k, ] + [t.strip() for t in v.split(',')])
         return palette
 
     def get_player_actions(self):
@@ -215,6 +228,7 @@ class ClientProperties(Properties):
 
     def get_interval(self, name):
         return self['task.%s' % name]
+
 
 class Lang(Properties):
     def get_deaths(self):
