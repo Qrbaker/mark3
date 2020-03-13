@@ -6,24 +6,24 @@ import stat
 import time
 import errno
 
-#start:
+# start:
 import subprocess
 import getpass
 import pwd
 import tempfile
 from . import manager
 
-#config:
+# config:
 from .shared import find_config, open_resource
 
-#attach:
+# attach:
 from . import user_client
 
-#send/stop/kill
+# send/stop/kill
 import json
 import socket
 
-#jar-list/jar-get
+# jar-list/jar-get
 from . import servers
 from twisted.internet import reactor
 
@@ -68,6 +68,7 @@ class Command(object):
     name = ""
     value_spec = ""
     options_spec = tuple()
+
     def __init__(self):
         pass
 
@@ -94,7 +95,7 @@ class Command(object):
     def parse_options(self, c_args):
         options = {}
         options_tys = {}
-        #transform
+        # transform
         for opt in self.__class__.get_options_spec():
             for flag in opt[1]:
                 options_tys[flag] = opt
@@ -132,13 +133,14 @@ class Command(object):
 
 
 class CommandTyStateful(Command):
-    options_spec = (('base', ('-b', '--base'), 'PATH',  'the directory to put mark2-related temp files (default: /tmp/mark2)'),)
+    options_spec = (
+    ('base', ('-b', '--base'), 'PATH', 'the directory to put mark2-related temp files (default: /tmp/mark2)'),)
 
     def do_start(self):
         self.shared_path = self.options.get('base', '/tmp/mark2')
         self.make_writable(self.shared_path)
 
-        #get servers
+        # get servers
         o = []
         for path in glob.glob(self.shared('pid', '*')):
             with open(path) as fp:
@@ -162,7 +164,8 @@ class CommandTyStateful(Command):
     def shared(self, ty, name=None):
         if name is None:
             name = self.server_name
-        return os.path.join(self.shared_path, "%s.%s" % (name, ty))
+        union_ret = os.path.join(self.shared_path, "%s.%s" % (name, ty))
+        return union_ret
 
     def make_writable(self, directory):
         need_modes = stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH | stat.S_IRWXG | stat.S_IRWXO
@@ -179,11 +182,12 @@ class CommandTyStateful(Command):
             os.chmod(directory, good_modes)
             return True
         except Exception:
-            raise Mark2Error('%s does not have the necessary modes to run mark2 and I do not have permission to change them!' % directory)
+            raise Mark2Error(
+                '%s does not have the necessary modes to run mark2 and I do not have permission to change them!' % directory)
 
 
 class CommandTySelective(CommandTyStateful):
-    options_spec = (('name', ('-n', '--name'), 'NAME',  'create or select a server with this name'),)
+    options_spec = (('name', ('-n', '--name'), 'NAME', 'create or select a server with this name'),)
 
     name_should_exist = True
     server_name = None
@@ -200,7 +204,7 @@ class CommandTySelective(CommandTyStateful):
                 raise Mark2Error("server not running: %s" % name)
         else:
             if name is None:
-                pass #CommandStart will fill it.
+                pass  # CommandStart will fill it.
             elif name in self.servers:
                 raise Mark2Error("server already running: %s" % name)
 
@@ -223,12 +227,13 @@ class CommandTySelective(CommandTyStateful):
 class CommandTyTerminal(CommandTySelective):
     options_spec = (
         ('wait', ('-w', '--wait'), 'REGEX', 'wait for this line of output to appear on console before returning.'),
-        ('only', ('-o', '--only'), '',      'print the matched line and no others'),
+        ('only', ('-o', '--only'), '', 'print the matched line and no others'),
         ('immediate', ('-i', '--immediate'), '', 'don\'t wait for any output'))
 
     wait = None
     wait_from_start = False
     only = False
+
     def do_end(self):
         if 'wait' in self.options:
             self.wait = self.options['wait']
@@ -245,17 +250,18 @@ class CommandTyTerminal(CommandTySelective):
     def do_wait(self):
         if self.wait is None:
             return
-        while not os.path.exists(self.shared('log')):
+        log_path = self.shared('log')
+        while not os.path.exists(log_path):
             time.sleep(0.1)
         with open(self.shared('log'), 'r') as f:
             if not self.wait_from_start:
-                f.seek(0,2)
+                f.seek(0, 2)
             while True:
                 line = f.readline().rstrip()
                 if not line:
                     time.sleep(0.1)
                     continue
-
+                1
                 if line[0] in (" ", "\t"):
                     print(line)
                     continue
@@ -274,6 +280,7 @@ class CommandHelp(Command):
     """display help and available options"""
     name = 'help'
     value_spec = "[COMMAND]"
+
     def run(self):
         if self.value is None:
             print(help_text.format(
@@ -282,9 +289,9 @@ class CommandHelp(Command):
         elif self.value in commands_d:
             cls = commands_d[self.value]
             print(help_sub_text.format(
-                subcommand = self.value,
-                doc = cls.__doc__,
-                value_spec = cls.value_spec
+                subcommand=self.value,
+                doc=cls.__doc__,
+                value_spec=cls.value_spec
             ))
             opts = cls.get_options_spec()
             if len(opts) > 0:
@@ -299,16 +306,16 @@ class CommandHelp(Command):
             line = ""
             for i, token in enumerate(tokens):
                 line += token
-                line += " "*(((i+1)*12)-len(line))
+                line += " " * (((i + 1) * 12) - len(line))
             o.append(line)
 
-        return "\n".join(("  "+l for l in o))
+        return "\n".join(("  " + l for l in o))
 
 
 class CommandStart(CommandTyTerminal):
     """start a server"""
     name = 'start'
-    value_spec='[PATH]'
+    value_spec = '[PATH]'
     name_should_exist = False
 
     def get_server_path(self):
@@ -331,9 +338,11 @@ class CommandStart(CommandTyTerminal):
             return
         if os.path.exists(os.path.realpath(os.path.join(os.path.dirname(__file__), '..', 'config'))):
             new_dir = os.path.dirname(new_cfg)
-            raise Mark2Error("mark2's configuration location has changed! move your config files to {0}".format(new_dir))
+            raise Mark2Error(
+                "mark2's configuration location has changed! move your config files to {0}".format(new_dir))
         else:
-            raise Mark2Error("mark2 is unconfigured! run `mark2 config` or `mkdir /etc/mark2 && touch /etc/mark2/mark2.properties` as root")
+            raise Mark2Error(
+                "mark2 is unconfigured! run `mark2 config` or `mkdir /etc/mark2 && touch /etc/mark2/mark2.properties` as root")
 
     def check_ownership(self):
         d_user = pwd.getpwuid(os.stat(self.server_path).st_uid).pw_name
@@ -341,7 +350,7 @@ class CommandStart(CommandTyTerminal):
         if d_user != m_user:
             e = "server directory is owned by '{d_user}', but mark2 is running as '{m_user}'. " + \
                 "please start mark2 as `sudo -u {d_user} mark2 start ...`"
-            raise Mark2Error(e.format(d_user=d_user,m_user=m_user))
+            raise Mark2Error(e.format(d_user=d_user, m_user=m_user))
 
     def daemonize(self):
         if os.fork() > 0:
@@ -418,17 +427,17 @@ class CommandConfig(Command):
             stderr=subprocess.PIPE
         ) == 0
 
-    def copy_config(self, src, dest, header=''):
+    def copy_config(self, src, dest, header=b''):
         f0 = src
         f1 = dest
         l0 = ''
 
-        while l0.strip() == '' or l0.startswith('### ###'):
+        while l0.strip() == '' or l0.startswith(b'### ###'):
             l0 = f0.readline()
 
         f1.write(header)
 
-        while l0 != '':
+        while l0 != b'':
             f1.write(l0)
             l0 = f0.readline()
 
@@ -480,14 +489,14 @@ class CommandConfig(Command):
         if os.path.exists(path_new):
             subprocess.call([editor, path_new])
         else:
-            #launch our editor
+            # launch our editor
             fd_tmp, path_tmp = tempfile.mkstemp(prefix='mark2.properties.', text=True)
             with open_resource(path_old) as src:
-                with open(path_tmp, 'w') as dst:
+                with open(path_tmp, 'wb') as dst:
                     self.copy_config(src, dst)
             subprocess.call([editor, path_tmp])
 
-            #diff the files
+            # diff the files
             with open_resource(path_old) as src:
                 with open(path_tmp, 'r') as dst:
                     write_config(self.diff_config(src, dst))
@@ -497,6 +506,7 @@ class CommandConfig(Command):
 class CommandList(CommandTyStateful):
     """list running servers"""
     name = 'list'
+
     def run(self):
         for s in self.servers:
             print(s)
@@ -505,6 +515,7 @@ class CommandList(CommandTyStateful):
 class CommandAttach(CommandTySelective):
     """attach to a server"""
     name = 'attach'
+
     def run(self):
         f = user_client.UserClientFactory(self.server_name, self.shared_path)
         f.main()
@@ -513,14 +524,16 @@ class CommandAttach(CommandTySelective):
 class CommandStop(CommandTyTerminal):
     """stop mark2"""
     name = 'stop'
+
     def run(self):
         self.do_send('~stop')
-        self.wait='# mark2 stopped\.'
+        self.wait = '# mark2 stopped\.'
 
 
 class CommandKill(CommandTyTerminal):
     """kill mark2"""
     name = 'kill'
+
     def run(self):
         self.do_send('~kill')
         self.wait = '# mark2 stopped\.'
@@ -529,22 +542,26 @@ class CommandKill(CommandTyTerminal):
 class CommandSend(CommandTyTerminal):
     """send a console command"""
     name = 'send'
-    value_spec='INPUT...'
+    value_spec = 'INPUT...'
+
     def run(self):
         if self.value is None:
             raise Mark2ParseError("nothing to send!")
         self.do_send(self.value)
 
+
 class CommandSendAll(CommandTyTerminal):
     """send a console command to all servers"""
     name = 'sendall'
-    value_spec='INPUT...'
+    value_spec = 'INPUT...'
+
     def run(self):
         if self.value is None:
             raise Mark2ParseError("nothing to send!")
         for s in self.servers:
             self.server_name = s
             self.do_send(self.value)
+
 
 class CommandJarList(Command):
     """list server jars"""
@@ -582,7 +599,7 @@ class CommandJarGet(Command):
             raise Mark2ParseError("missing jar type!")
 
         def err(what):
-            #reactor.stop()
+            # reactor.stop()
             print("error: %s" % what.value)
 
         def handle(filename_data):
@@ -605,7 +622,9 @@ class CommandJarGet(Command):
         reactor.run()
 
 
-commands = (CommandHelp, CommandStart, CommandList, CommandAttach, CommandStop, CommandKill, CommandSend, CommandSendAll, CommandJarList, CommandJarGet, CommandConfig)
+commands = (
+CommandHelp, CommandStart, CommandList, CommandAttach, CommandStop, CommandKill, CommandSend, CommandSendAll,
+CommandJarList, CommandJarGet, CommandConfig)
 commands_d = dict([(c.name, c) for c in commands])
 
 
