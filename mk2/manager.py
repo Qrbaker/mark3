@@ -188,7 +188,7 @@ class Manager(object):
                                             data=event.data))
 
     def handle_console(self, event):
-        for line in event.value().encode('utf8').split("\n"):
+        for line in event.value().split("\n"):
             log.msg(line, system="mark2")
     
     def handle_fatal(self, event):
