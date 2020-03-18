@@ -8,12 +8,19 @@ from mk2.plugins import Plugin
 
 
 class PingProtocol(Protocol):
+    def __init__(self):
+        self.buff = ""
+
     def connectionMade(self):
         self.buff = ""
-        self.transport.write('\xFE\x01')
+        ping_packet = b'\xFE\x01'
+        self.transport.write(ping_packet)
     
     def dataReceived(self, data):
-        self.buff += data
+        if type(data) != 'str':
+            self.buff += data.decode('utf8')
+        else:
+            self.buff += data
         if len(self.buff) >= 3:
             l = struct.unpack('>h', self.buff[1:3])[0]
             
